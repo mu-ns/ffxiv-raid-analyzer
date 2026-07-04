@@ -52,9 +52,19 @@ def count_wipes(fights: list[dict]) -> int:
     return sum(1 for f in fights if f.get("kill") is False)
 
 
-def build_roster(actors: list[dict], excluded_names: set[str]) -> list[str]:
-    names = {a["name"] for a in actors if a["name"] not in excluded_names}
-    return sorted(names)
+def total_real_pulls(groups: list[PullGroup]) -> int:
+    return sum(g.pulls for g in groups if not g.is_trash)
+
+
+def per_pull_rate(counts: dict[str, int], total_pulls: int) -> dict[str, float]:
+    if total_pulls == 0:
+        return {name: 0.0 for name in counts}
+    return {name: n / total_pulls for name, n in counts.items()}
+
+
+def build_roster(actors: list[dict], excluded_names: set[str]) -> dict[str, str]:
+    jobs = {a["name"]: a["subType"] for a in actors if a["name"] not in excluded_names}
+    return dict(sorted(jobs.items()))
 
 
 def count_deaths(deaths_table: dict) -> dict[str, int]:
@@ -66,3 +76,11 @@ def count_deaths(deaths_table: dict) -> dict[str, int]:
 
 def deaths_minus_wipes(deaths: dict[str, int], wipe_count: int) -> dict[str, int]:
     return {name: n - wipe_count for name, n in deaths.items()}
+
+
+def count_casts(cast_table: dict) -> dict[str, int]:
+    return {e["name"]: e["total"] for e in cast_table["data"].get("entries", [])}
+
+
+def count_debuff_applications(debuff_table: dict) -> dict[str, int]:
+    return {e["name"]: e["totalUses"] for e in debuff_table["data"].get("auras", [])}

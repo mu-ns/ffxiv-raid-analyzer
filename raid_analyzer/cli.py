@@ -32,14 +32,14 @@ def login():
 
 
 @app.command()
-def analyze(report: str = typer.Argument(..., help="Report code or fflogs.com URL")):
+def analyze(report_arg: str = typer.Argument(..., help="Report code or fflogs.com URL")):
     try:
         token = auth.get_valid_access_token()
     except auth.NotLoggedInError as e:
         typer.echo(str(e))
         raise typer.Exit(1)
 
-    code = extract_report_code(report)
+    code = extract_report_code(report_arg)
     gql = client.GraphQLClient(token)
 
     try:
@@ -50,13 +50,14 @@ def analyze(report: str = typer.Argument(..., help="Report code or fflogs.com UR
 
     groups = stats.group_pulls(report["fights"])
     display.render_pulls_table(groups)
+    total_pulls = stats.total_real_pulls(groups)
 
     wipe_count = stats.count_wipes(report["fights"])
     roster = stats.build_roster(report["masterData"]["actors"], constants.EXCLUDED_ACTOR_NAMES)
     fight_ids = [f["id"] for f in report["fights"]]
 
     try:
-        tables, _alias_map = gql.get_tables(code, fight_ids, constants.MITIGATION_ABILITIES, constants.DAMAGE_DOWN_ABILITIES)
+        tables, alias_map = gql.get_tables(code, fight_ids, constants.MITIGATION_ABILITIES, constants.DAMAGE_DOWN_ABILITIES)
     except client.ArchivedReportError as e:
         typer.echo(str(e))
         raise typer.Exit(1)
@@ -66,4 +67,18 @@ def analyze(report: str = typer.Argument(..., help="Report code or fflogs.com UR
 
     deaths = stats.count_deaths(tables["deaths"])
     deaths_minus_wipes = stats.deaths_minus_wipes(deaths, wipe_count)
-    display.render_player_table(roster, deaths, deaths_minus_wipes)
+    deaths_minus_wipes_rate = stats.per_pull_rate(deaths_minus_wipes, total_pulls)
+
+    mitigations: dict[str, dict[str, int]] = {}
+    damage_downs: dict[str, dict[str, int]] = {}
+    for alias, (kind, label) in alias_map.items():
+        if kind == "mitigation":
+            mitigations[label] = stats.count_casts(tables[alias])
+        elif kind == "damage_down":
+            damage_downs[label] = stats.count_debuff_applications(tables[alias])
+
+    mitigation_rates = {label: stats.per_pull_rate(counts, total_pulls) for label, counts in mitigations.items()}
+    damage_down_rates = {label: stats.per_pull_rate(counts, total_pulls) for label, counts in damage_downs.items()}
+
+    display.render_deaths_table(roster, deaths, deaths_minus_wipes, deaths_minus_wipes_rate, damage_downs, damage_down_rates)
+    display.render_mitigation_table(mitigations, mitigation_rates)

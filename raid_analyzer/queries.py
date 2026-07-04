@@ -26,6 +26,7 @@ query ReportFightsAndActors($code: String!) {
         actors(type: "Player") {
           id
           name
+          subType
         }
       }
     }
