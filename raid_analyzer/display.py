@@ -67,16 +67,16 @@ def render_mitigation_table(
     t.add_column("Avg/Pull")
     labels = list(mitigations.keys())
     for i, label in enumerate(labels):
-        counts = mitigations[label]
-        t.add_row(f"[bold]{label}[/bold]", "", "")
-        sorted_players = sorted(counts.items(), key=lambda kv: kv[1], reverse=True)
+        is_last_label = i == len(labels) - 1
+        sorted_players = sorted(mitigations[label].items(), key=lambda kv: kv[1], reverse=True)
+        t.add_row(f"[bold]{label}[/bold]", "", "", end_section=not sorted_players and not is_last_label)
         for j, (player, count) in enumerate(sorted_players):
             is_last_row = j == len(sorted_players) - 1
             t.add_row(
                 player,
                 str(count),
                 f"{mitigation_rates[label].get(player, 0.0):.2f}",
-                end_section=is_last_row and i < len(labels) - 1,
+                end_section=is_last_row and not is_last_label,
             )
     console.print(t)
 
