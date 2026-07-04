@@ -11,6 +11,14 @@ class GraphQLError(Exception):
     pass
 
 
+class ReportNotFoundError(Exception):
+    pass
+
+
+class NoFightsError(Exception):
+    pass
+
+
 class GraphQLClient:
     def __init__(self, access_token: str):
         self.access_token = access_token
@@ -34,3 +42,16 @@ class GraphQLClient:
     def get_current_user(self) -> dict:
         data = self.execute(queries.CURRENT_USER_QUERY, {})
         return data["userData"]["currentUser"]
+
+    def get_fights_and_actors(self, code: str) -> dict:
+        data = self.execute(queries.FIGHTS_AND_ACTORS_QUERY, {"code": code})
+        report = data["reportData"]["report"]
+        if report is None:
+            raise ReportNotFoundError(
+                f"Report '{code}' could not be loaded. Check the code/URL is "
+                "correct, and if it's a private report, confirm your FFLogs "
+                "account has access to it."
+            )
+        if not report.get("fights"):
+            raise NoFightsError(f"Report '{code}' has no fights recorded.")
+        return report
