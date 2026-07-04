@@ -23,13 +23,20 @@ class ArchivedReportError(Exception):
     pass
 
 
-def _raise_for_errors(errors: list[dict]) -> None:
+def _raise_for_errors(errors: list[dict], code: str | None = None) -> None:
     message = "; ".join(e.get("message", "") for e in errors)
-    if "archived" in message.lower():
+    lower = message.lower()
+    if "archived" in lower:
         raise ArchivedReportError(
             "This report is archived and requires an active FFLogs subscription "
             "to pull fight data from. Analyze the report before it archives, or "
             "log in with a subscribed account."
+        )
+    if "does not exist" in lower:
+        raise ReportNotFoundError(
+            f"Report '{code}' could not be loaded. Check the code/URL is "
+            "correct, and if it's a private report, confirm your FFLogs "
+            "account has access to it."
         )
     raise GraphQLError(f"FFLogs API error: {message}")
 
@@ -50,7 +57,7 @@ class GraphQLClient:
         except urllib.error.HTTPError as e:
             raise GraphQLError(f"FFLogs API request failed (HTTP {e.code}).") from e
         if body.get("errors"):
-            _raise_for_errors(body["errors"])
+            _raise_for_errors(body["errors"], variables.get("code"))
         return body["data"]
 
     def get_current_user(self) -> dict:

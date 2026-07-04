@@ -1,3 +1,4 @@
+import pyperclip
 from rich.console import Console
 from rich.table import Table
 
@@ -71,3 +72,48 @@ def render_mitigation_table(
                 end_section=is_last_row and i < len(labels) - 1,
             )
     console.print(t)
+
+
+def copy_tsv(
+    groups: list[PullGroup],
+    roster: dict[str, str],
+    deaths: dict[str, int],
+    deaths_minus_wipes: dict[str, int],
+    deaths_minus_wipes_rate: dict[str, float],
+    damage_downs: dict[str, dict[str, int]],
+    damage_down_rates: dict[str, dict[str, float]],
+    mitigations: dict[str, dict[str, int]],
+    mitigation_rates: dict[str, dict[str, float]],
+) -> None:
+    lines = ["Boss\tPulls\tCleared"]
+    for g in groups:
+        cleared = "-" if g.is_trash else ("Yes" if g.cleared else "No")
+        lines.append(f"{g.name}\t{g.pulls}\t{cleared}")
+
+    lines.append("")
+    header = ["Player", "Job", "Deaths", "Avg/Pull", "Incl. wipes"]
+    for label in damage_downs:
+        header += [label, f"{label} Avg/Pull"]
+    lines.append("\t".join(header))
+    for player, job in roster.items():
+        row = [
+            player,
+            job,
+            str(deaths_minus_wipes.get(player, 0)),
+            f"{deaths_minus_wipes_rate.get(player, 0.0):.2f}",
+            str(deaths.get(player, 0)),
+        ]
+        for label in damage_downs:
+            row.append(str(damage_downs[label].get(player, 0)))
+            row.append(f"{damage_down_rates[label].get(player, 0.0):.2f}")
+        lines.append("\t".join(row))
+
+    for label, counts in mitigations.items():
+        lines.append("")
+        lines.append(label)
+        lines.append("Player\tCasts\tAvg/Pull")
+        for player, count in sorted(counts.items(), key=lambda kv: kv[1], reverse=True):
+            lines.append(f"{player}\t{count}\t{mitigation_rates[label].get(player, 0.0):.2f}")
+
+    pyperclip.copy("\n".join(lines))
+    console.print("[green]Copied TSV to clipboard.[/green]")

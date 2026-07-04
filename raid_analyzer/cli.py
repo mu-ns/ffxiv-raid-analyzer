@@ -82,3 +82,7 @@ def analyze(report_arg: str = typer.Argument(..., help="Report code or fflogs.co
 
     display.render_deaths_table(roster, deaths, deaths_minus_wipes, deaths_minus_wipes_rate, damage_downs, damage_down_rates)
     display.render_mitigation_table(mitigations, mitigation_rates)
+    display.copy_tsv(
+        groups, roster, deaths, deaths_minus_wipes, deaths_minus_wipes_rate,
+        damage_downs, damage_down_rates, mitigations, mitigation_rates,
+    )
