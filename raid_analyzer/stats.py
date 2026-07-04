@@ -9,6 +9,7 @@ class PullGroup:
     name: str
     pulls: int
     cleared: bool
+    fight_ids: list[int]
     is_trash: bool = False
 
 
@@ -41,10 +42,10 @@ def group_pulls(fights: list[dict]) -> list[PullGroup]:
     for (enc_id, diff), pulls in groups.items():
         cleared = any(p.get("kill") is True for p in pulls)
         name = names[(enc_id, diff)].most_common(1)[0][0]
-        result.append(PullGroup(enc_id, diff, name, len(pulls), cleared))
+        result.append(PullGroup(enc_id, diff, name, len(pulls), cleared, [p["id"] for p in pulls]))
 
     if trash:
-        result.append(PullGroup(0, None, "Trash", len(trash), False, is_trash=True))
+        result.append(PullGroup(0, None, "Trash", len(trash), False, [f["id"] for f in trash], is_trash=True))
     return result
 
 

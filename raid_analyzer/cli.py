@@ -1,5 +1,6 @@
 import re
 
+import questionary
 import typer
 from dotenv import load_dotenv
 
@@ -21,6 +22,14 @@ def extract_report_code(raw: str) -> str:
             f"'{raw}' doesn't look like a valid FFLogs report code or URL."
         )
     return candidate
+
+
+def prompt_boss_selection(groups: list[stats.PullGroup]) -> stats.PullGroup | None:
+    """Returns the selected boss's PullGroup, or None for "Overall"."""
+    bosses = [g for g in groups if not g.is_trash]
+    choices = [questionary.Choice(title="Overall (all bosses)", value=None)]
+    choices += [questionary.Choice(title=g.name, value=g) for g in bosses]
+    return questionary.select("Show stats for:", choices=choices).ask()
 
 
 @app.command()
@@ -50,11 +59,22 @@ def analyze(report_arg: str = typer.Argument(..., help="Report code or fflogs.co
 
     groups = stats.group_pulls(report["fights"])
     display.render_pulls_table(groups)
-    total_pulls = stats.total_real_pulls(groups)
 
-    wipe_count = stats.count_wipes(report["fights"])
+    selected = prompt_boss_selection(groups)
+    if not isinstance(selected, stats.PullGroup):
+        scope_label = "Overall"
+        scoped_fights = report["fights"]
+        fight_ids = [f["id"] for f in report["fights"]]
+        total_pulls = stats.total_real_pulls(groups)
+    else:
+        scope_label = selected.name
+        selected_ids = set(selected.fight_ids)
+        scoped_fights = [f for f in report["fights"] if f["id"] in selected_ids]
+        fight_ids = selected.fight_ids
+        total_pulls = selected.pulls
+
+    wipe_count = stats.count_wipes(scoped_fights)
     roster = stats.build_roster(report["masterData"]["actors"], constants.EXCLUDED_ACTOR_NAMES)
-    fight_ids = [f["id"] for f in report["fights"]]
 
     try:
         tables, alias_map = gql.get_tables(code, fight_ids, constants.MITIGATION_ABILITIES, constants.DAMAGE_DOWN_ABILITIES)
@@ -80,9 +100,9 @@ def analyze(report_arg: str = typer.Argument(..., help="Report code or fflogs.co
     mitigation_rates = {label: stats.per_pull_rate(counts, total_pulls) for label, counts in mitigations.items()}
     damage_down_rates = {label: stats.per_pull_rate(counts, total_pulls) for label, counts in damage_downs.items()}
 
-    display.render_deaths_table(roster, deaths, deaths_minus_wipes, deaths_minus_wipes_rate, damage_downs, damage_down_rates)
-    display.render_mitigation_table(mitigations, mitigation_rates)
+    display.render_deaths_table(scope_label, roster, deaths, deaths_minus_wipes, deaths_minus_wipes_rate, damage_downs, damage_down_rates)
+    display.render_mitigation_table(scope_label, mitigations, mitigation_rates)
     display.copy_tsv(
-        groups, roster, deaths, deaths_minus_wipes, deaths_minus_wipes_rate,
+        scope_label, groups, roster, deaths, deaths_minus_wipes, deaths_minus_wipes_rate,
         damage_downs, damage_down_rates, mitigations, mitigation_rates,
     )

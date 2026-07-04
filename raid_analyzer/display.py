@@ -13,12 +13,18 @@ def render_pulls_table(groups: list[PullGroup]) -> None:
     t.add_column("Pulls")
     t.add_column("Cleared")
     for g in groups:
-        cleared = "-" if g.is_trash else ("Yes" if g.cleared else "No")
+        if g.is_trash:
+            cleared = "[dim]-[/dim]"
+        elif g.cleared:
+            cleared = "[green]Yes[/green]"
+        else:
+            cleared = "[red]No[/red]"
         t.add_row(g.name, str(g.pulls), cleared)
     console.print(t)
 
 
 def render_deaths_table(
+    scope_label: str,
     roster: dict[str, str],
     deaths: dict[str, int],
     deaths_minus_wipes: dict[str, int],
@@ -26,7 +32,7 @@ def render_deaths_table(
     damage_downs: dict[str, dict[str, int]],
     damage_down_rates: dict[str, dict[str, float]],
 ) -> None:
-    t = Table(title="Deaths / Damage Down")
+    t = Table(title=f"Deaths / Damage Down ({scope_label})")
     t.add_column("Player")
     t.add_column("Job")
     t.add_column("Deaths")
@@ -51,10 +57,11 @@ def render_deaths_table(
 
 
 def render_mitigation_table(
+    scope_label: str,
     mitigations: dict[str, dict[str, int]],
     mitigation_rates: dict[str, dict[str, float]],
 ) -> None:
-    t = Table(title="Mitigations")
+    t = Table(title=f"Mitigations ({scope_label})")
     t.add_column("Player")
     t.add_column("Casts")
     t.add_column("Avg/Pull")
@@ -75,6 +82,7 @@ def render_mitigation_table(
 
 
 def copy_tsv(
+    scope_label: str,
     groups: list[PullGroup],
     roster: dict[str, str],
     deaths: dict[str, int],
@@ -85,7 +93,7 @@ def copy_tsv(
     mitigations: dict[str, dict[str, int]],
     mitigation_rates: dict[str, dict[str, float]],
 ) -> None:
-    lines = ["Boss\tPulls\tCleared"]
+    lines = [f"Encounter: {scope_label}", "", "Boss\tPulls\tCleared"]
     for g in groups:
         cleared = "-" if g.is_trash else ("Yes" if g.cleared else "No")
         lines.append(f"{g.name}\t{g.pulls}\t{cleared}")
