@@ -23,6 +23,14 @@ class ArchivedReportError(Exception):
     pass
 
 
+def _report_not_found(code: str | None) -> ReportNotFoundError:
+    return ReportNotFoundError(
+        f"Report '{code}' could not be loaded. Check the code/URL is "
+        "correct, and if it's a private report, confirm your FFLogs "
+        "account has access to it."
+    )
+
+
 def _raise_for_errors(errors: list[dict], code: str | None = None) -> None:
     message = "; ".join(e.get("message", "") for e in errors)
     lower = message.lower()
@@ -33,11 +41,7 @@ def _raise_for_errors(errors: list[dict], code: str | None = None) -> None:
             "log in with a subscribed account."
         )
     if "does not exist" in lower:
-        raise ReportNotFoundError(
-            f"Report '{code}' could not be loaded. Check the code/URL is "
-            "correct, and if it's a private report, confirm your FFLogs "
-            "account has access to it."
-        )
+        raise _report_not_found(code)
     raise GraphQLError(f"FFLogs API error: {message}")
 
 
@@ -68,11 +72,7 @@ class GraphQLClient:
         data = self.execute(queries.FIGHTS_AND_ACTORS_QUERY, {"code": code})
         report = data["reportData"]["report"]
         if report is None:
-            raise ReportNotFoundError(
-                f"Report '{code}' could not be loaded. Check the code/URL is "
-                "correct, and if it's a private report, confirm your FFLogs "
-                "account has access to it."
-            )
+            raise _report_not_found(code)
         if not report.get("fights"):
             raise NoFightsError(f"Report '{code}' has no fights recorded.")
         return report
@@ -81,3 +81,10 @@ class GraphQLClient:
         query, alias_map = queries.build_table_query(mitigations, damage_downs)
         data = self.execute(query, {"code": code, "fightIDs": fight_ids})
         return data["reportData"]["report"], alias_map
+
+    def get_abilities(self, code: str) -> list[dict]:
+        data = self.execute(queries.ABILITIES_QUERY, {"code": code})
+        report = data["reportData"]["report"]
+        if report is None:
+            raise _report_not_found(code)
+        return report["masterData"]["abilities"]

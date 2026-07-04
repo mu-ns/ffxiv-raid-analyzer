@@ -40,6 +40,36 @@ def login():
     typer.echo(f"Logged in as {user['name']}.")
 
 
+@app.command(name="find-ability")
+def find_ability(
+    report_arg: str = typer.Argument(..., help="Report code or fflogs.com URL"),
+    search: str = typer.Argument(..., help="Ability name substring to search for"),
+):
+    """Look up ability IDs to fill into constants.py, by name, from a real report."""
+    try:
+        token = auth.get_valid_access_token()
+    except auth.NotLoggedInError as e:
+        typer.echo(str(e))
+        raise typer.Exit(1)
+
+    code = extract_report_code(report_arg)
+    gql = client.GraphQLClient(token)
+
+    try:
+        abilities = gql.get_abilities(code)
+    except (client.ReportNotFoundError, client.GraphQLError) as e:
+        typer.echo(str(e))
+        raise typer.Exit(1)
+
+    matches = [a for a in abilities if search.lower() in (a["name"] or "").lower()]
+    if not matches:
+        typer.echo(f"No abilities matching '{search}' found in report '{code}'.")
+        raise typer.Exit(1)
+
+    for a in matches:
+        typer.echo(f"{a['gameID']}\t{a['name']}")
+
+
 @app.command()
 def analyze(report_arg: str = typer.Argument(..., help="Report code or fflogs.com URL")):
     try:

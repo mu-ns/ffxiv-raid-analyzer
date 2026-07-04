@@ -12,7 +12,7 @@ spreadsheet.
 3. Copy `.env.example` to `.env` and fill in `FFLOGS_CLIENT_ID` / `FFLOGS_CLIENT_SECRET`
    from that client.
 4. Edit `raid_analyzer/constants.py` to set the mitigation and damage-down ability IDs you
-   want tracked (see the comments in that file for how to find an ability's ID).
+   want tracked. See "Finding ability IDs" below for how to find them.
 
 ## Usage
 
@@ -31,3 +31,23 @@ copies the same data as TSV to your clipboard for pasting into a spreadsheet.
 Note: FFLogs archives reports after some time, and pulling fight data from an archived
 report requires an active FFLogs subscription. Analyze a report before it archives if you
 don't have one.
+
+## Finding ability IDs
+
+`MITIGATION_ABILITIES` and `DAMAGE_DOWN_ABILITIES` in `raid_analyzer/constants.py` are
+`label -> FFLogs ability ID` dicts. FFLogs has no built-in concept of "this is a
+mitigation" or "this is the damage-down debuff", so these are picked and entered by hand.
+Use the `find-ability` command against any report that contains a cast/application of the
+ability you're looking for:
+
+```
+uv run python main.py find-ability <report code or URL> <search text>
+```
+
+For example, `uv run python main.py find-ability 9mtdaRFcMKvV4khn reprisal` prints every
+ability with "reprisal" in its name along with its ID, one per line.
+
+Some abilities show up twice under similar names: a lower "cast" ID (the ability itself)
+and a higher, `100xxxx`-prefixed "debuff" ID (the effect it applies to whoever it hits).
+Use the cast ID for `MITIGATION_ABILITIES` and the debuff's own ID for
+`DAMAGE_DOWN_ABILITIES`.

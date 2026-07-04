@@ -1,20 +1,5 @@
-# Hardcoded FFLogs ability IDs for raid-tracking stats.
-#
-# masterData.abilities has no concept of "this is a mitigation" or "this is
-# the damage-down debuff" - it's just a name/icon lookup, and names can be
-# localized while IDs are not. So these are maintained by hand.
-#
-# How to find an ability's ID:
-#   1. Open a report containing a cast/debuff application of that ability.
-#   2. Query that report's masterData.abilities, e.g.:
-#        query { reportData { report(code: "<code>") {
-#          masterData { abilities { gameID name } }
-#        } } }
-#      and find the row with the matching name. Note some abilities show up
-#      twice: a lower "cast" ID (the ability itself) and a 100xxxx-prefixed
-#      "debuff" ID (the effect it applies) - use the cast ID for
-#      MITIGATION_ABILITIES (dataType: Casts) and the relevant debuff's own ID
-#      for DAMAGE_DOWN_ABILITIES (dataType: Debuffs).
+# Hardcoded FFLogs ability IDs for raid-tracking stats, maintained by hand.
+# See "Finding ability IDs" in the README for how to fill these in.
 
 # label -> FFLogs ability ID. One cast-count column per entry.
 MITIGATION_ABILITIES: dict[str, int] = {

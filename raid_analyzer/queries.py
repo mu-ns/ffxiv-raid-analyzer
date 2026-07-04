@@ -9,6 +9,21 @@ query {
 }
 """
 
+ABILITIES_QUERY = """
+query ReportAbilities($code: String!) {
+  reportData {
+    report(code: $code) {
+      masterData {
+        abilities {
+          gameID
+          name
+        }
+      }
+    }
+  }
+}
+"""
+
 FIGHTS_AND_ACTORS_QUERY = """
 query ReportFightsAndActors($code: String!) {
   reportData {
