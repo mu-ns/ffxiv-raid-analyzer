@@ -24,13 +24,12 @@ uv run python main.py analyze <report code or fflogs.com URL>
 `login` opens a browser to authorize with FFLogs and caches the resulting token under
 `~/.config/ffxiv-raid-analyzer/` (override the location with `RAID_ANALYZER_CONFIG_DIR`).
 
-`analyze` shows pulls/clears for the report, lets you pick a specific boss (or overall) to
+`analyze` shows pulls/clears for the report, lets you optionally pick a specific boss to
 scope the rest of the stats to, then prints deaths/damage-down and mitigation tables and
 copies the same data as TSV to your clipboard for pasting into a spreadsheet.
 
-Note: FFLogs archives reports after some time, and pulling fight data from an archived
-report requires an active FFLogs subscription. Analyze a report before it archives if you
-don't have one.
+_Note_: FFLogs archives reports after some time, and pulling fight data from an archived
+report requires an active FFLogs subscription.
 
 ## Finding ability IDs
 
