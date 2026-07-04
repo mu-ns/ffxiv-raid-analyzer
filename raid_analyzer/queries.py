@@ -29,6 +29,7 @@ query ReportFightsAndActors($code: String!) {
   reportData {
     report(code: $code) {
       title
+      startTime
       fights {
         id
         name

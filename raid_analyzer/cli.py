@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 
 import questionary
 import typer
@@ -30,9 +31,9 @@ def extract_report_code(raw: str) -> str:
 
 
 def prompt_boss_selection(groups: list[stats.PullGroup]) -> stats.PullGroup | None:
-    """Returns the selected boss's PullGroup, or None for "Overall"."""
+    """Returns the selected boss's PullGroup, or None for "All fights"."""
     bosses = [g for g in groups if not g.is_trash]
-    choices = [questionary.Choice(title="Overall (all bosses)", value=None)]
+    choices = [questionary.Choice(title="All fights", value=None)]
     choices += [questionary.Choice(title=g.name, value=g) for g in bosses]
     return questionary.select("Show stats for:", choices=choices, style=_SELECT_STYLE).ask()
 
@@ -97,7 +98,8 @@ def analyze(report_arg: str = typer.Argument(..., help="Report code or fflogs.co
 
     selected = prompt_boss_selection(groups)
     if not isinstance(selected, stats.PullGroup):
-        scope_label = "Overall"
+        selected = None
+        scope_label = "All fights"
         scoped_fights = report["fights"]
         fight_ids = [f["id"] for f in report["fights"]]
         total_pulls = stats.total_real_pulls(groups)
@@ -137,7 +139,11 @@ def analyze(report_arg: str = typer.Argument(..., help="Report code or fflogs.co
 
     display.render_deaths_table(scope_label, roster, deaths, deaths_minus_wipes, deaths_minus_wipes_rate, damage_downs, damage_down_rates)
     display.render_mitigation_table(scope_label, mitigations, mitigation_rates)
+
+    report_date = datetime.fromtimestamp(report["startTime"] / 1000).strftime("%Y-%m-%d")
+    report_url = f"https://www.fflogs.com/reports/{code}"
     display.copy_tsv(
-        scope_label, groups, roster, deaths, deaths_minus_wipes, deaths_minus_wipes_rate,
+        report_date, report_url, selected, wipe_count, groups,
+        roster, deaths, deaths_minus_wipes, deaths_minus_wipes_rate,
         damage_downs, damage_down_rates, mitigations, mitigation_rates,
     )

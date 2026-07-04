@@ -84,7 +84,10 @@ def render_mitigation_table(
 
 
 def copy_tsv(
-    scope_label: str,
+    report_date: str,
+    report_url: str,
+    selected: PullGroup | None,
+    wipe_count: int,
     groups: list[PullGroup],
     roster: dict[str, str],
     deaths: dict[str, int],
@@ -95,10 +98,15 @@ def copy_tsv(
     mitigations: dict[str, dict[str, int]],
     mitigation_rates: dict[str, dict[str, float]],
 ) -> None:
-    lines = [f"Encounter: {scope_label}", "", "Boss\tPulls\tCleared"]
-    for g in groups:
-        cleared = "-" if g.is_trash else ("Yes" if g.cleared else "No")
-        lines.append(f"{g.name}\t{g.pulls}\t{cleared}")
+    lines = [f"Date: {report_date}", f"Report: {report_url}", ""]
+    if selected is None:
+        lines.append("Boss\tPulls\tCleared")
+        for g in groups:
+            cleared = "-" if g.is_trash else ("Yes" if g.cleared else "No")
+            lines.append(f"{g.name}\t{g.pulls}\t{cleared}")
+    else:
+        lines.append("Fight\tPulls\tWipes\tKill")
+        lines.append(f"{selected.name}\t{selected.pulls}\t{wipe_count}\t{'Yes' if selected.cleared else 'No'}")
 
     lines.append("")
     header = ["Player", "Job", "Deaths", "Avg/Pull", "Incl. wipes"]
