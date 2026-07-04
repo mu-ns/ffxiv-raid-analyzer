@@ -43,14 +43,27 @@ def analyze(report: str = typer.Argument(..., help="Report code or fflogs.com UR
     gql = client.GraphQLClient(token)
 
     try:
-        rep = gql.get_fights_and_actors(code)
+        report = gql.get_fights_and_actors(code)
     except (client.ReportNotFoundError, client.NoFightsError, client.GraphQLError) as e:
         typer.echo(str(e))
         raise typer.Exit(1)
 
-    groups = stats.group_pulls(rep["fights"])
+    groups = stats.group_pulls(report["fights"])
     display.render_pulls_table(groups)
 
-    wipe_count = stats.count_wipes(rep["fights"])
-    roster = stats.build_roster(rep["masterData"]["actors"], constants.EXCLUDED_ACTOR_NAMES)
-    typer.echo(f"Wipes: {wipe_count}. Roster: {', '.join(roster.values())}")
+    wipe_count = stats.count_wipes(report["fights"])
+    roster = stats.build_roster(report["masterData"]["actors"], constants.EXCLUDED_ACTOR_NAMES)
+    fight_ids = [f["id"] for f in report["fights"]]
+
+    try:
+        tables, _alias_map = gql.get_tables(code, fight_ids, constants.MITIGATION_ABILITIES, constants.DAMAGE_DOWN_ABILITIES)
+    except client.ArchivedReportError as e:
+        typer.echo(str(e))
+        raise typer.Exit(1)
+    except client.GraphQLError as e:
+        typer.echo(str(e))
+        raise typer.Exit(1)
+
+    deaths = stats.count_deaths(tables["deaths"])
+    deaths_minus_wipes = stats.deaths_minus_wipes(deaths, wipe_count)
+    display.render_player_table(roster, deaths, deaths_minus_wipes)

@@ -19,6 +19,21 @@ class NoFightsError(Exception):
     pass
 
 
+class ArchivedReportError(Exception):
+    pass
+
+
+def _raise_for_errors(errors: list[dict]) -> None:
+    message = "; ".join(e.get("message", "") for e in errors)
+    if "archived" in message.lower():
+        raise ArchivedReportError(
+            "This report is archived and requires an active FFLogs subscription "
+            "to pull fight data from. Analyze the report before it archives, or "
+            "log in with a subscribed account."
+        )
+    raise GraphQLError(f"FFLogs API error: {message}")
+
+
 class GraphQLClient:
     def __init__(self, access_token: str):
         self.access_token = access_token
@@ -35,8 +50,7 @@ class GraphQLClient:
         except urllib.error.HTTPError as e:
             raise GraphQLError(f"FFLogs API request failed (HTTP {e.code}).") from e
         if body.get("errors"):
-            message = "; ".join(e.get("message", "") for e in body["errors"])
-            raise GraphQLError(f"FFLogs API error: {message}")
+            _raise_for_errors(body["errors"])
         return body["data"]
 
     def get_current_user(self) -> dict:
@@ -55,3 +69,8 @@ class GraphQLClient:
         if not report.get("fights"):
             raise NoFightsError(f"Report '{code}' has no fights recorded.")
         return report
+
+    def get_tables(self, code: str, fight_ids: list[int], mitigations: dict[str, int], damage_downs: dict[str, int]):
+        query, alias_map = queries.build_table_query(mitigations, damage_downs)
+        data = self.execute(query, {"code": code, "fightIDs": fight_ids})
+        return data["reportData"]["report"], alias_map

@@ -52,5 +52,17 @@ def count_wipes(fights: list[dict]) -> int:
     return sum(1 for f in fights if f.get("kill") is False)
 
 
-def build_roster(actors: list[dict], excluded_names: set[str]) -> dict[str, str]:
-    return {str(a["id"]): a["name"] for a in actors if a["name"] not in excluded_names}
+def build_roster(actors: list[dict], excluded_names: set[str]) -> list[str]:
+    names = {a["name"] for a in actors if a["name"] not in excluded_names}
+    return sorted(names)
+
+
+def count_deaths(deaths_table: dict) -> dict[str, int]:
+    counts: Counter = Counter()
+    for entry in deaths_table["data"].get("entries", []):
+        counts[entry["name"]] += 1
+    return dict(counts)
+
+
+def deaths_minus_wipes(deaths: dict[str, int], wipe_count: int) -> dict[str, int]:
+    return {name: n - wipe_count for name, n in deaths.items()}
