@@ -6,9 +6,11 @@ from raid_analyzer.stats import PullGroup
 
 console = Console()
 
+HEADER_STYLE = "bold cyan"
+
 
 def render_pulls_table(groups: list[PullGroup]) -> None:
-    t = Table(title="Pulls / Clears")
+    t = Table(title="Pulls / Clears", header_style=HEADER_STYLE)
     t.add_column("Boss")
     t.add_column("Pulls")
     t.add_column("Cleared")
@@ -32,7 +34,7 @@ def render_deaths_table(
     damage_downs: dict[str, dict[str, int]],
     damage_down_rates: dict[str, dict[str, float]],
 ) -> None:
-    t = Table(title=f"Deaths / Damage Down ({scope_label})")
+    t = Table(title=f"Deaths / Damage Down ({scope_label})", header_style=HEADER_STYLE)
     t.add_column("Player")
     t.add_column("Job")
     t.add_column("Deaths")
@@ -61,7 +63,7 @@ def render_mitigation_table(
     mitigations: dict[str, dict[str, int]],
     mitigation_rates: dict[str, dict[str, float]],
 ) -> None:
-    t = Table(title=f"Mitigations ({scope_label})")
+    t = Table(title=f"Mitigations ({scope_label})", header_style=HEADER_STYLE)
     t.add_column("Player")
     t.add_column("Casts")
     t.add_column("Avg/Pull")
@@ -69,7 +71,7 @@ def render_mitigation_table(
     for i, label in enumerate(labels):
         is_last_label = i == len(labels) - 1
         sorted_players = sorted(mitigations[label].items(), key=lambda kv: kv[1], reverse=True)
-        t.add_row(f"[bold]{label}[/bold]", "", "", end_section=not sorted_players and not is_last_label)
+        t.add_row(f"[italic cyan]{label}[/italic cyan]", "", "", end_section=not sorted_players and not is_last_label)
         for j, (player, count) in enumerate(sorted_players):
             is_last_row = j == len(sorted_players) - 1
             t.add_row(

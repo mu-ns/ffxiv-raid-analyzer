@@ -12,6 +12,11 @@ app = typer.Typer(add_completion=False)
 _CODE_RE = re.compile(r"^[A-Za-z0-9]{10,20}$")
 _URL_RE = re.compile(r"fflogs\.com/reports/([A-Za-z0-9]+)")
 
+_SELECT_STYLE = questionary.Style([
+    ("pointer", "fg:cyan bold"),
+    ("highlighted", "fg:cyan bold"),
+])
+
 
 def extract_report_code(raw: str) -> str:
     raw = raw.strip()
@@ -29,7 +34,7 @@ def prompt_boss_selection(groups: list[stats.PullGroup]) -> stats.PullGroup | No
     bosses = [g for g in groups if not g.is_trash]
     choices = [questionary.Choice(title="Overall (all bosses)", value=None)]
     choices += [questionary.Choice(title=g.name, value=g) for g in bosses]
-    return questionary.select("Show stats for:", choices=choices).ask()
+    return questionary.select("Show stats for:", choices=choices, style=_SELECT_STYLE).ask()
 
 
 @app.command()
