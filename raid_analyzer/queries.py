@@ -37,6 +37,7 @@ query ReportFightsAndActors($code: String!) {
         originalEncounterID
         difficulty
         kill
+        friendlyPlayers
       }
       masterData {
         actors(type: "Player") {

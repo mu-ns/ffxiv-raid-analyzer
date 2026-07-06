@@ -32,9 +32,8 @@ def extract_report_code(raw: str) -> str:
 
 def prompt_boss_selection(groups: list[stats.PullGroup]) -> stats.PullGroup | None:
     """Returns the selected boss's PullGroup, or None for "All fights"."""
-    bosses = [g for g in groups if not g.is_trash]
     choices = [questionary.Choice(title="All fights", value=None)]
-    choices += [questionary.Choice(title=g.name, value=g) for g in bosses]
+    choices += [questionary.Choice(title=g.name, value=g) for g in groups]
     return questionary.select("Show stats for:", choices=choices, style=_SELECT_STYLE).ask()
 
 
@@ -100,8 +99,8 @@ def analyze(report_arg: str = typer.Argument(..., help="Report code or fflogs.co
     if not isinstance(selected, stats.PullGroup):
         selected = None
         scope_label = "All fights"
-        scoped_fights = report["fights"]
-        fight_ids = [f["id"] for f in report["fights"]]
+        fight_ids = [fid for g in groups for fid in g.fight_ids]
+        scoped_fights = [f for f in report["fights"] if f["id"] in set(fight_ids)]
         total_pulls = stats.total_real_pulls(groups)
     else:
         scope_label = selected.name
@@ -111,7 +110,8 @@ def analyze(report_arg: str = typer.Argument(..., help="Report code or fflogs.co
         total_pulls = selected.pulls
 
     wipe_count = stats.count_wipes(scoped_fights)
-    roster = stats.build_roster(report["masterData"]["actors"], constants.EXCLUDED_ACTOR_NAMES)
+    active_ids = stats.active_actor_ids(scoped_fights)
+    roster = stats.build_roster(report["masterData"]["actors"], constants.EXCLUDED_ACTOR_NAMES, active_ids)
 
     try:
         tables, alias_map = gql.get_tables(code, fight_ids, constants.MITIGATION_ABILITIES, constants.DAMAGE_DOWN_ABILITIES)

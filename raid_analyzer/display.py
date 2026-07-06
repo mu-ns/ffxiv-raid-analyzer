@@ -15,12 +15,7 @@ def render_pulls_table(groups: list[PullGroup]) -> None:
     t.add_column("Pulls")
     t.add_column("Cleared")
     for g in groups:
-        if g.is_trash:
-            cleared = "[dim]-[/dim]"
-        elif g.cleared:
-            cleared = "[green]Yes[/green]"
-        else:
-            cleared = "[red]No[/red]"
+        cleared = "[green]Yes[/green]" if g.cleared else "[red]No[/red]"
         t.add_row(g.name, str(g.pulls), cleared)
     console.print(t)
 
@@ -102,7 +97,7 @@ def copy_tsv(
     if selected is None:
         lines.append("Boss\tPulls\tCleared")
         for g in groups:
-            cleared = "-" if g.is_trash else ("Yes" if g.cleared else "No")
+            cleared = "Yes" if g.cleared else "No"
             lines.append(f"{g.name}\t{g.pulls}\t{cleared}")
     else:
         lines.append("Fight\tPulls\tWipes\tKill")

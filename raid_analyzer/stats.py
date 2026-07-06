@@ -10,11 +10,9 @@ class PullGroup:
     pulls: int
     cleared: bool
     fight_ids: list[int]
-    is_trash: bool = False
 
 
 def group_pulls(fights: list[dict]) -> list[PullGroup]:
-    trash = [f for f in fights if f["encounterID"] == 0 and f.get("originalEncounterID") is None]
     real = [f for f in fights if not (f["encounterID"] == 0 and f.get("originalEncounterID") is None)]
 
     def effective_id(f: dict) -> int:
@@ -44,8 +42,6 @@ def group_pulls(fights: list[dict]) -> list[PullGroup]:
         name = names[(enc_id, diff)].most_common(1)[0][0]
         result.append(PullGroup(enc_id, diff, name, len(pulls), cleared, [p["id"] for p in pulls]))
 
-    if trash:
-        result.append(PullGroup(0, None, "Trash", len(trash), False, [f["id"] for f in trash], is_trash=True))
     return result
 
 
@@ -54,7 +50,14 @@ def count_wipes(fights: list[dict]) -> int:
 
 
 def total_real_pulls(groups: list[PullGroup]) -> int:
-    return sum(g.pulls for g in groups if not g.is_trash)
+    return sum(g.pulls for g in groups)
+
+
+def active_actor_ids(fights: list[dict]) -> set[int]:
+    ids: set[int] = set()
+    for f in fights:
+        ids.update(f.get("friendlyPlayers") or [])
+    return ids
 
 
 def per_pull_rate(counts: dict[str, int], total_pulls: int) -> dict[str, float]:
@@ -63,8 +66,12 @@ def per_pull_rate(counts: dict[str, int], total_pulls: int) -> dict[str, float]:
     return {name: n / total_pulls for name, n in counts.items()}
 
 
-def build_roster(actors: list[dict], excluded_names: set[str]) -> dict[str, str]:
-    jobs = {a["name"]: a["subType"] for a in actors if a["name"] not in excluded_names}
+def build_roster(actors: list[dict], excluded_names: set[str], active_ids: set[int]) -> dict[str, str]:
+    jobs = {
+        a["name"]: a["subType"]
+        for a in actors
+        if a["name"] not in excluded_names and a["id"] in active_ids
+    }
     return dict(sorted(jobs.items()))
 
 
