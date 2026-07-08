@@ -17,3 +17,7 @@ DAMAGE_DOWN_ABILITIES: dict[str, int] = {
 # masterData.actors(type: "Player") mixes in non-player pseudo-entries;
 # filter these out by name when building the player roster.
 EXCLUDED_ACTOR_NAMES = {"Multiple Players", "Limit Break"}
+
+# table(dataType: Deaths) silently truncates at 200 entries per request no matter
+# how many fightIDs are passed. Fetch in chunks this small to stay well under that.
+DEATHS_QUERY_CHUNK_SIZE = 10

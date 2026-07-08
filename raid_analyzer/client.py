@@ -2,7 +2,7 @@ import json
 import urllib.error
 import urllib.request
 
-from raid_analyzer import queries
+from raid_analyzer import constants, queries
 
 GRAPHQL_URL = "https://www.fflogs.com/api/v2/user"
 
@@ -80,7 +80,18 @@ class GraphQLClient:
     def get_tables(self, code: str, fight_ids: list[int], mitigations: dict[str, int], damage_downs: dict[str, int]):
         query, alias_map = queries.build_table_query(mitigations, damage_downs)
         data = self.execute(query, {"code": code, "fightIDs": fight_ids})
-        return data["reportData"]["report"], alias_map
+        tables = data["reportData"]["report"]
+        tables["deaths"] = self._get_deaths_table(code, fight_ids)
+        return tables, alias_map
+
+    def _get_deaths_table(self, code: str, fight_ids: list[int]) -> dict:
+        entries = []
+        chunk_size = constants.DEATHS_QUERY_CHUNK_SIZE
+        for i in range(0, len(fight_ids), chunk_size):
+            chunk = fight_ids[i:i + chunk_size]
+            data = self.execute(queries.DEATHS_QUERY, {"code": code, "fightIDs": chunk})
+            entries += data["reportData"]["report"]["table"]["data"]["entries"]
+        return {"data": {"entries": entries}}
 
     def get_abilities(self, code: str) -> list[dict]:
         data = self.execute(queries.ABILITIES_QUERY, {"code": code})
