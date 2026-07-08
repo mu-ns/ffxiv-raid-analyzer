@@ -19,5 +19,6 @@ DAMAGE_DOWN_ABILITIES: dict[str, int] = {
 EXCLUDED_ACTOR_NAMES = {"Multiple Players", "Limit Break"}
 
 # table(dataType: Deaths) silently truncates at 200 entries per request no matter
-# how many fightIDs are passed. Fetch in chunks this small to stay well under that.
-DEATHS_QUERY_CHUNK_SIZE = 10
+# how many fightIDs are passed. Fetch in chunks this small to stay well under that,
+# with margin for 24-person alliance raids (more players per pull than an 8-person party).
+DEATHS_QUERY_CHUNK_SIZE = 5
