@@ -93,7 +93,7 @@ def copy_tsv(
     mitigations: dict[str, dict[str, int]],
     mitigation_rates: dict[str, dict[str, float]],
 ) -> None:
-    lines = [f"Date: {report_date}", f"Report: {report_url}", ""]
+    lines = [f"Date\t{report_date}", f"Report\t{report_url}", ""]
     if selected is None:
         lines.append("Boss\tPulls\tCleared")
         for g in groups:
